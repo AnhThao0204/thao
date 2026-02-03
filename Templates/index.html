@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Nhận diện Chó & Mèo</title>
+    <style>
+        body {
+            background: #0f172a;
+            font-family: Arial, sans-serif;
+            color: #e5e7eb;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 850px;
+            margin: 40px auto;
+            background: #020617;
+            padding: 30px;
+            border-radius: 14px;
+            box-shadow: 0 0 25px rgba(0,0,0,0.6);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .upload-box {
+            border: 2px dashed #334155;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        input[type="file"] {
+            margin-top: 15px;
+            color: #e5e7eb;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 12px 28px;
+            border-radius: 10px;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #scanBtn {
+            background: #2563eb;
+            color: white;
+            display: none;
+        }
+
+        #scanBtn:hover {
+            background: #1d4ed8;
+        }
+
+        .error {
+            color: #f87171;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .preview {
+            margin-top: 25px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .preview img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 1px solid #334155;
+        }
+
+        .results {
+            margin-top: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: #020617;
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .cat { color: #22c55e; }
+        .dog { color: #38bdf8; }
+
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #94a3b8;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🐶🐱 Nhận diện Chó & Mèo</h1>
+
+    <form id="uploadForm" action="/predict" method="post" enctype="multipart/form-data">
+        <div class="upload-box">
+            <p>📤 Upload ảnh (JPG, JPEG, PNG)</p>
+
+            <input type="file" id="imageInput" name="files[]" multiple accept="image/*">
+
+            <div id="errorMsg" class="error"></div>
+
+            <button id="scanBtn" type="submit">🔍 Bắt đầu Scan</button>
+        </div>
+    </form>
+
+    <div class="preview" id="preview"></div>
+
+    {% if predictions %}
+    <div class="results">
+        {% for img_str, probs in predictions %}
+        <div class="card">
+            <img src="data:image/jpeg;base64,{{ img_str }}">
+            <p class="cat">🐱 Mèo: {{ "%.2f"|format(probs[0]) }}%</p>
+            <p class="dog">🐶 Chó: {{ "%.2f"|format(probs[1]) }}%</p>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <footer>
+        Flask + TensorFlow | AI Image Classification
+    </footer>
+</div>
+
+<script>
+    const imageInput = document.getElementById('imageInput');
+    const preview = document.getElementById('preview');
+    const errorMsg = document.getElementById('errorMsg');
+    const scanBtn = document.getElementById('scanBtn');
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+
+    imageInput.addEventListener('change', () => {
+        preview.innerHTML = '';
+        errorMsg.textContent = '';
+        scanBtn.style.display = 'none';
+
+        const files = imageInput.files;
+        let valid = true;
+
+        for (let file of files) {
+            if (!allowedTypes.includes(file.type)) {
+                valid = false;
+                break;
+            }
+        }
+
+        if (!valid || files.length === 0) {
+            errorMsg.textContent = '❌ File không hợp lệ! Chỉ chấp nhận JPG, JPEG, PNG.';
+            imageInput.value = '';
+            return;
+        }
+
+        // Preview ảnh
+        for (let file of files) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                preview.appendChild(img);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        scanBtn.style.display = 'inline-block';
+    });
+</script>
+
+</body>
+</html>
